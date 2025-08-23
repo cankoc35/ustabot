@@ -23,6 +23,9 @@ services:
 
   ollama:
     image: ollama/ollama:latest
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     container_name: rag_ollama
     ports: ["11434:11434"]
     volumes:
