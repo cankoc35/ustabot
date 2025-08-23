@@ -4,3 +4,5 @@ psycopg[binary]
 requests
 apscheduler
 pydantic
+ollama
+beautifulsoup4

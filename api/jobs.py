@@ -56,6 +56,6 @@ def get_response():
             cur.execute(get_response_from_llm_query(str(user_question), str(documents)))
 
             response = cur.fetchone()
-            return response
+    return response
     
 
