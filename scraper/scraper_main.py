@@ -36,15 +36,15 @@ async def extract_with_ollama(url: str) -> Dict:
     
     # Configure virtual scroll
     virtual_config = VirtualScrollConfig(
-        container_selector="#feed",      # CSS selector for scrollable container
-        scroll_count=20,                 # Number of scrolls to perform
-        scroll_by="container_height",    # How much to scroll each time
-        wait_after_scroll=1           # Wait time (seconds) after each scroll
+        container_selector=".main-feed",  # CSS selector for scrollable container "#feed" ".main-feed" "article"
+        scroll_count=50,               # Number of scrolls to perform
+        scroll_by="container_height",  # How much to scroll each time
+        wait_after_scroll=2            # Wait time (seconds) after each scroll
     )
     
     crawler_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS,
-        page_timeout=90_000,
+        page_timeout=100_000,
         extraction_strategy=LLMExtractionStrategy(
             llm_config=LLMConfig(
                 provider="ollama/llama3.2:3b",
@@ -60,7 +60,6 @@ async def extract_with_ollama(url: str) -> Dict:
     )
     async with AsyncWebCrawler(config=browser_config) as crawler:
         result = await crawler.arun(url=url, config=crawler_config)
-        # Always validate JSON
         return json.loads(result.extracted_content or "{}")
 
 async def main():
