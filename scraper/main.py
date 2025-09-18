@@ -36,7 +36,7 @@ def build_crawler_config_for_ollama() -> CrawlerRunConfig:
         page_timeout=90_000,
         extraction_strategy=LLMExtractionStrategy(
             llm_config=LLMConfig(
-                provider="ollama/deepseek-r1:7b",
+                provider="ollama/deepseek-r1:7b", # llama3.2:3b - deepseek-r1:7b
                 base_url=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                 api_token=None,
                 temperature=0,
