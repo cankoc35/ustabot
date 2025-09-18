@@ -1,6 +1,7 @@
 import os, json, re, asyncio
 from typing import Dict, Any, Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from datetime import datetime
 from crawl4ai import (
     AsyncWebCrawler, BrowserConfig, CrawlerRunConfig, CacheMode,
     LLMExtractionStrategy, LLMConfig, VirtualScrollConfig
@@ -18,7 +19,8 @@ class RepairShopTable(BaseModel):
     items: List[RepairShop]
 
 INSTRUCTION = (
-    "Extract all visible repair shops from the results list panel. "
+    "Extract all visible repair shops from the results list panel"
+    "Extract its name, address, phone number, star rating, and number of comments. "
     "Return ONLY one JSON object matching the schema. Use null/[] if unknown."
 )
 
@@ -78,6 +80,11 @@ async def extract_with_ollama(url: str) -> Dict[str, Any]:
 
     RepairShopTable.model_validate(data)
     print(f"Extracted {len(data.get('items', []))} items")
+    
+    filename = f"repair_shops_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        
     return data
 
 if __name__ == "__main__":
