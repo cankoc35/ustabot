@@ -9,6 +9,7 @@ from crawl4ai import (
     CacheMode,
     LLMExtractionStrategy,
     LLMConfig,
+    VirtualScrollConfig
 )
 
 # ----- Define a strict schema for what you want back -----
@@ -30,13 +31,23 @@ If a field is missing on the page, set it to null.
 
 EXTRACT_URL = "https://www.google.com/maps/search/izmir+en+iyi+oto+tamirciler"
 
-def build_crawler_config_for_ollama() -> CrawlerRunConfig:
-    return CrawlerRunConfig(
+async def extract_with_ollama(url: str) -> Dict:
+    browser_config = BrowserConfig(headless=True, java_script_enabled=True)
+    
+    # Configure virtual scroll
+    virtual_config = VirtualScrollConfig(
+        container_selector="#feed",      # CSS selector for scrollable container
+        scroll_count=20,                 # Number of scrolls to perform
+        scroll_by="container_height",    # How much to scroll each time
+        wait_after_scroll=1           # Wait time (seconds) after each scroll
+    )
+    
+    crawler_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS,
         page_timeout=90_000,
         extraction_strategy=LLMExtractionStrategy(
             llm_config=LLMConfig(
-                provider="ollama/deepseek-r1:7b", # llama3.2:3b - deepseek-r1:7b
+                provider="ollama/llama3.2:3b",
                 base_url=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
                 api_token=None,
                 temperature=0,
@@ -44,14 +55,11 @@ def build_crawler_config_for_ollama() -> CrawlerRunConfig:
             schema=RepairShopTable.model_json_schema(),
             extraction_type="schema",
             instruction=INSTRUCTION,
+            virtual_scroll_config=virtual_config
         ),
     )
-
-async def extract_with_ollama(url: str) -> Dict:
-    browser = BrowserConfig(headless=True, java_script_enabled=True)
-    config = build_crawler_config_for_ollama()
-    async with AsyncWebCrawler(config=browser) as crawler:
-        result = await crawler.arun(url=url, config=config)
+    async with AsyncWebCrawler(config=browser_config) as crawler:
+        result = await crawler.arun(url=url, config=crawler_config)
         # Always validate JSON
         return json.loads(result.extracted_content or "{}")
 
