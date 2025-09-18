@@ -67,3 +67,4 @@ services:
       - db
       - flyway                           
     restart: unless-stopped
+
