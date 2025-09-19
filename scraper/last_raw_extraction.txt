@@ -1,0 +1,42 @@
+[
+    {
+        "repair_shop_name": "Nedir",
+        "address": null,
+        "phone_number": null,
+        "star_rating": 4.5,
+        "number_of_comments": 123,
+        "error": false
+    },
+    {
+        "repair_shop_name": "Gıdaş",
+        "address": "Beyoğlu, Istanbul",
+        "phone_number": "+90 555 1234567",
+        "star_rating": 4.8,
+        "number_of_comments": 56,
+        "error": false
+    },
+    {
+        "repair_shop_name": "Nedir",
+        "address": null,
+        "phone_number": null,
+        "star_rating": 4.2,
+        "number_of_comments": 78,
+        "error": false
+    },
+    {
+        "index": 0,
+        "error": true,
+        "tags": [
+            "error"
+        ],
+        "content": "litellm.APIConnectionError: OllamaException - litellm.Timeout: Connection timed out after 600.0 seconds."
+    },
+    {
+        "index": 1,
+        "error": true,
+        "tags": [
+            "error"
+        ],
+        "content": "litellm.APIConnectionError: OllamaException - litellm.Timeout: Connection timed out after 600.0 seconds."
+    }
+]
