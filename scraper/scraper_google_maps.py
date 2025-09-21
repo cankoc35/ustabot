@@ -35,32 +35,44 @@ cities_and_districts = {
 
 INSTRUCTION = (
     "You are extracting from a Google Maps results list (left panel). "
-    "Return JSON that VALIDATES against this schema and NOTHING else (no prose, no markdown fences):\n"
+    "Return JSON that VALIDATES against this schema and NOTHING else:\n"
     f"{json.dumps(RepairShopTable.model_json_schema(), ensure_ascii=False)}\n"
     'Output exactly one object of the form: {"items":[{...}]}. '
-    "Use null for unknown fields. Do not add extra keys.\n"
+    "Treat every visible list card as one item. Use null for unknown fields."
 )
 
 EXTRACT_URL = "https://www.google.com/maps/search/izmir+en+iyi+oto+tamirciler"
+QUERY = "izmir en iyi oto tamirciler"
+
+LLM_MODEL = "ollama/llama3.2:3b"
+HOST = "OLLAMA_HOST"
+HOST_URL = "http://localhost:11434"
 
 async def extract_with_ollama(url: str) -> Dict[str, Any]:
-    browser_config = BrowserConfig(headless=True, java_script_enabled=True)
+    browser_config = BrowserConfig(
+        headless=True, 
+        java_script_enabled=True,
+        enable_stealth=True
+    )
 
     vscroll_config = VirtualScrollConfig(
-        container_selector="#pane .m6QErb[aria-label][role='region'], #pane [role='feed'], [role='feed']",
-        scroll_count=160,      
+        container_selector="#pane [role=feed]",
+        scroll_count=120,      
         scroll_by="container_height",
-        wait_after_scroll=1.0,
+        wait_after_scroll=1.2,
     )
 
     crawler_config = CrawlerRunConfig(
+        css_selector="#pane [role=feed]",
+        process_iframes=True,
+        remove_overlay_elements=True,
         virtual_scroll_config=vscroll_config,
         cache_mode=CacheMode.BYPASS,
         page_timeout=150_000,
         extraction_strategy=LLMExtractionStrategy(
             llm_config=LLMConfig(
-                provider="ollama/llama3.2:3b", 
-                base_url=os.getenv("OLLAMA_HOST", "http://localhost:11434"),
+                provider=LLM_MODEL, 
+                base_url=os.getenv(HOST, HOST_URL),
                 api_token=None,
                 temperature=0,
             ),
@@ -71,15 +83,19 @@ async def extract_with_ollama(url: str) -> Dict[str, Any]:
     )
     
     async with AsyncWebCrawler(config=browser_config) as crawler:
-        adaptive_crawler = AdaptiveCrawler(crawler)
+        adaptive_crawler = AdaptiveCrawler(
+            crawler,
+            max_pages=1,
+            top_k_links=0,
+        )
+        
         adaptive_result = await adaptive_crawler.digest(
             url,
-            query="izmir en iyi oto tamirciler",
+            query=QUERY,
         )
         
         # Print adaptive crawling stats
         adaptive_crawler.print_stats()
-        print(f"Crawled {len(adaptive_result.crawled_urls)} pages")
         print(f"Achieved {adaptive_crawler.confidence:.0%} confidence")
 
         # Perform extraction
