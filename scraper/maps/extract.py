@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Any
 
-from models import LIST_SCHEMA
+from entities import LIST_SCHEMA
 
 from crawl4ai import (
     AsyncWebCrawler, 
@@ -12,14 +12,14 @@ from crawl4ai import (
     JsonCssExtractionStrategy
 )
 
-async def extract_with_css(url: str) -> Dict[str, Any]:
+async def extract_from_google_maps(city_name: str, count: int) -> Dict[str, Any]:
     browser = BrowserConfig(
         headless=True, 
         viewport={"width": 1280, "height": 720}
     )
     virtual_config = VirtualScrollConfig(
         container_selector='[role="feed"]',
-        scroll_count=20,                  
+        scroll_count=count,                  
         scroll_by="container_height",
         wait_after_scroll=1,
     )
@@ -31,7 +31,10 @@ async def extract_with_css(url: str) -> Dict[str, Any]:
     )
 
     async with AsyncWebCrawler(config=browser) as crawler:
-        res = await crawler.arun(url, config=run_config)
+        res = await crawler.arun(
+            url=f"https://www.google.com/maps/search/{city_name}+en+iyi+oto+tamirciler", 
+            config=run_config
+        )
 
     raw = res.extracted_content
     data = json.loads(raw) if isinstance(raw, str) else raw
@@ -77,10 +80,11 @@ async def extract_with_css(url: str) -> Dict[str, Any]:
                 break
         if addr:
             addr = addr.replace("Açık", "").replace("Kapalı", "").strip(" ,.-")
+            addr = addr.__add__(city_name) if city_name not in addr else addr
 
         out.append({
             "repair_shop_name": (r.get("repair_shop_name") or "").strip(),
-            "address": addr or None,
+            "address": addr or city_name,
             "phone_number": phone_number,
             "star_rating": star_rating,
             "number_of_comments": number_of_comments,
