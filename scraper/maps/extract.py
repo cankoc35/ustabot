@@ -1,6 +1,7 @@
-import asyncio, json
-from typing import Dict, Any, Optional, List
-from pydantic import BaseModel
+import json
+from typing import Dict, Any
+
+from models import LIST_SCHEMA
 
 from crawl4ai import (
     AsyncWebCrawler, 
@@ -11,50 +12,6 @@ from crawl4ai import (
     JsonCssExtractionStrategy
 )
 
-class RepairShop(BaseModel):
-    repair_shop_name: str
-    address: Optional[str] = None
-    phone_number: Optional[str] = None
-    star_rating: Optional[float] = None
-    number_of_comments: Optional[int] = None
-
-class RepairShopTable(BaseModel):
-    items: List[RepairShop]
-
-LIST_SCHEMA = {
-    "name": "Google Maps Repair Shops",
-    "baseSelector": (
-        "[role='feed'] [role='article'][data-result-index], "   # 1) structural
-        "[role='feed'] [data-result-index], "                   # 2) looser structural
-        "[role='feed'] .Nv2PK"                                  # 3) old obfuscated card class
-    ),
-    "fields": [
-        {"name": "repair_shop_name",
-         "selector": ".qBF1Pd.fontHeadlineSmall, .qBF1Pd, .fontHeadlineSmall, h3",
-         "type": "text"},
-        {"name": "place_url",
-         "selector": "a.hfpxzc[href*='/place/']",
-         "type": "link"},
-        {"name": "star_rating",
-         "selector": ".MW4etd[aria-hidden='true'], .ZkP5Je[aria-label*='yıldız'], .ZkP5Je[aria-label*='star']",
-         "type": "text"},
-        {"name": "number_of_comments",
-         "selector": ".UY7F9, span[aria-label*='yorum'], span[aria-label*='review'], span[aria-label*='reviews']",
-         "type": "text"},
-        {"name": "phone_number",
-         "selector": ".UaQhfb.fontBodyMedium .Usdlk, a[href^='tel:']",
-         "type": "text"},
-        {"name": "address",
-         "selector": ".UaQhfb.fontBodyMedium span[aria-hidden='true'] + span",
-         "type": "text"},
-        {"name": "details_block",
-         "selector": ".UaQhfb.fontBodyMedium",
-         "type": "text"},
-    ],
-}
-
-EXTRACT_URL = "https://www.google.com/maps/search/izmir+en+iyi+oto+tamirciler"
-
 async def extract_with_css(url: str) -> Dict[str, Any]:
     browser = BrowserConfig(
         headless=True, 
@@ -64,7 +21,7 @@ async def extract_with_css(url: str) -> Dict[str, Any]:
         container_selector='[role="feed"]',
         scroll_count=20,                  
         scroll_by="container_height",
-        wait_after_scroll=2,
+        wait_after_scroll=1,
     )
     strategy = JsonCssExtractionStrategy(schema=LIST_SCHEMA)
     run_config = CrawlerRunConfig(
@@ -121,7 +78,6 @@ async def extract_with_css(url: str) -> Dict[str, Any]:
         if addr:
             addr = addr.replace("Açık", "").replace("Kapalı", "").strip(" ,.-")
 
-
         out.append({
             "repair_shop_name": (r.get("repair_shop_name") or "").strip(),
             "address": addr or None,
@@ -131,9 +87,3 @@ async def extract_with_css(url: str) -> Dict[str, Any]:
         })
 
     return {"items": out}
-
-if __name__ == "__main__":
-    data = asyncio.run(extract_with_css(EXTRACT_URL))
-    print(json.dumps(data, ensure_ascii=False, indent=2))
-
-
