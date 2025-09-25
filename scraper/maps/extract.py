@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Any
 
-from entities import LIST_SCHEMA
+from .entities import LIST_SCHEMA
 
 from crawl4ai import (
     AsyncWebCrawler, 
@@ -12,14 +12,14 @@ from crawl4ai import (
     JsonCssExtractionStrategy
 )
 
-async def extract_from_google_maps(city_name: str, count: int) -> Dict[str, Any]:
+async def extract_from_google_maps(city_name: str, count: int = 5) -> Dict[str, Any]:
     browser = BrowserConfig(
         headless=True, 
         viewport={"width": 1280, "height": 720}
     )
     virtual_config = VirtualScrollConfig(
         container_selector='[role="feed"]',
-        scroll_count=count,                  
+        scroll_count=count,
         scroll_by="container_height",
         wait_after_scroll=1,
     )
